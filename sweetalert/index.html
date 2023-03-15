@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sweet alert</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
+</head>
+<body>
+    <button class="btn btn-primary create">Create</button>
+    <button class="btn btn-secondary fetch">Fetch</button>
+    <button class="btn btn-danger remove">Remove</button>
+ <script>
+	$('.create').click(function(){
+		var url = $(this).attr("src");
+		Swal.fire({
+			showCancelButton: false,
+			allowOutsideClick: false,
+			showConfirmButton: false,
+			target: 'body',
+			imageUrl: url,
+			width: '600px',
+			allowOutsideClick: () => !Swal.isLoading(),
+		});
+	});
+
+	const Toast = Swal.mixin({
+		toast: true,
+		position: 'top-end',
+		showConfirmButton: false,
+		timer: 2000,
+		timerProgressBar: true,
+		didOpen: (toast) => {
+			toast.addEventListener('mouseenter', Swal.stopTimer)
+			toast.addEventListener('mouseleave', Swal.resumeTimer)
+		}
+	});
+
+	$(document).ready(function(){
+		$('.create').on('click', function(){
+			var card = `
+					<form class='js-create' method="POST" enctype="multipart/form-data">
+						<div class="form-group">
+							<select class="form-select" aria-label="Default select example"
+								<option value="option1" selected>Option 1</option>
+								<option value="option2">Option 2</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<input type="text" name="field1" class="form-control" placeholder="Field 1" autofocus>
+						</div>
+                        <div class="form-group">
+							<input type="text" name="field2" class="form-control" placeholder="Field 2">
+						</div>
+                        <div class="form-group">
+							<input type="text" name="field3" class="form-control" placeholder="Field 3">
+						</div>
+
+						<div class="form-group">
+							<textarea name="area1" rows="2" class="form-control" placeholder="area 1"></textarea>
+						</div>
+						<div class="form-group">
+							<input type="file" name="image" class="form-control"></input>
+						</div>
+					</form>
+				`;
+				Swal.fire({
+					title: 'Create new ...',
+					html: card,
+					footer: '<a href="">Why do I have this issue?</a>',
+					preConfirm: function(){
+						var formData = new FormData($(".js-create")[0]);
+						return $.post({
+ 							url: "/api/create.php",
+							data: formData,
+							processData: false,
+      						contentType: false,
+							success: function(data) {
+								// Handle the response from the server
+								Toast.fire({
+									icon: 'success',
+									title: 'Cập nhật thành công'
+								})
+
+								setTimeout(function(){
+									// location.reload();
+								}, 2000)
+							},
+						})
+					}
+				})
+
+		})
+		async function fetchData(id) {
+			const response = await fetch(`/api/get.php?id=${id}`);
+			const data = await response.json();
+			return data;
+		}
+
+		var url = "";
+        // get preview image
+		$('body').on("change", "input[name=re-image]", function(){
+			var file = $(this)[0].files[0];
+			URL.revokeObjectURL(url);
+
+			if (file){
+				var url = URL.createObjectURL(file);
+				$('.swal2-image').attr('src', url);
+			}
+		});
+
+		$('body').on("click", '.swal2-image', function(){
+			$('input[name=re-image]').click();
+		})
+
+        //get data -> edit
+		$('.edit').on('click', function(){
+			fetchData($(this).data("id")).then(data => {
+				var card = `<form method="POST" enctype="multipart/form-data" class='js-edit'>
+					<div class="form-group">
+							<select class="form-select" aria-label="Default select example" value='${data.value}'>
+								<option value="option1" selected>Option 1</option>
+								<option value="option2">Option 2</option>
+							</select>
+						</div>
+					<div class="form-group">
+						<input type="text" name="field1" class="form-control" placeholder="Field 1" value="${data.field1}" autofocus>
+					</div>
+					<div class="form-group">
+						<input type="text" name="field2" class="form-control" placeholder="Field 2" value="${data.field2}" autofocus>
+					</div>
+					<div class="form-group">
+						<input type="text" name="field3" class="form-control" placeholder="Field 3" value="${data.field3}"></input>
+					</div>
+					<div class="form-group">
+						<input type="file" name="re-image" class="form-control"></input>
+					</div>
+					<input name="id" type='hidden' value='${data.id}'></input>
+				</form>`;
+				Swal.fire({
+					showCancelButton: true,
+					allowOutsideClick: false,
+					confirmButtonColor: '#3085d6',
+					cancelButtonColor: '#d33',
+					confirmButtonText: 'Save',
+					showLoaderOnConfirm: true,
+					reverseButtons: true,
+					container: 'body',
+					imageUrl: data.image,
+					html: card,
+					allowOutsideClick: () => !Swal.isLoading(),
+					preConfirm: function(){
+						var formData = new FormData($(".js-edit")[0]);
+						return $.post({
+ 							url: "/api/edit.php",
+							data: formData,
+							processData: false,
+      						contentType: false,
+							success: function(data) {
+								// Handle the response from the server
+								Toast.fire({
+									icon: 'success',
+									title: 'Cập nhật thành công'
+								});
+
+								// URL.revokeObjectURL(url);
+
+								setTimeout(function(){
+									location.reload();
+								}, 2000)
+							},
+						})
+					}
+				});
+			})
+		})
+
+        // get content and show on pop up
+		$('.fetch').on('click', function(){
+			fetch('popup.html').then(data => data.text()).then(data => {
+					Swal.fire({
+						allowOutsideClick: () => !Swal.isLoading(),
+						html: data,
+                        showConfirmButton: false
+						// width: '600px'
+					});
+				})
+		    }
+        )
+
+        // remove
+		$('.remove').on('click', function(){
+			var id = $(this).data("id");
+			Swal.fire({
+				title: 'Are you sure?',
+				text: "You won't be able to revert this!",
+				icon: 'warning',
+				showCancelButton: true,
+				confirmButtonColor: '#3085d6',
+				cancelButtonColor: '#d33',
+				confirmButtonText: 'Remove',
+				reverseButtons: true
+			}).then((result) => {
+				if (result.isConfirmed) {
+					$.get({
+						url: `/api/remove.php?id=${id}`,
+						processData: false,
+						contentType: false,
+						success: function(data) {
+							// Handle the response from the server
+							Toast.fire({
+								icon: 'success',
+								title: 'Xóa thành công'
+							});
+
+							setTimeout(function(){
+								console.log("reload")
+								location.reload();
+							}, 2000)
+						}
+					})
+				}
+			})
+		})
+	})
+</script>
+</body>
+</html>
