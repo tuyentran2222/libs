@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Preview URL</title>
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+	<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+	<script src="https://code.jquery.com/jquery-3.6.4.min.js" integrity="sha256-oP6HI9z1XaZNBrJURtCoUT5SUnxFr8s3BzRl+cbzUq8=" crossorigin="anonymous"></script>
+	<link rel="stylesheet" href="style.css">
+</head>
+<body>
+	<button class="btn btn-secondary preview-btn">Get preview</button>
+	<script>
+		$(document).ready(function(){
+			$('.preview-btn').click(function(){
+				Swal.fire({
+					title: 'Submit URL for preview',
+					input: 'text',
+					inputAttributes: {
+						autocapitalize: 'off'
+					},
+					showCancelButton: true,
+					confirmButtonText: 'Look up',
+					html: "<div id='js-preview'></div>",
+					preConfirm: (url) => {
+						return $.post({
+							url: "index.php",
+							data: {url: url},
+							success: function(data) {
+								
+							},
+						})
+					},
+					allowOutsideClick: () => !Swal.isLoading()
+				}).then(result => {
+					if (result.isConfirmed) {
+						var data = JSON.parse(result.value)
+						Swal.fire({
+							showConfirmButton: false,
+							html: `<div class="preview">
+								<img src="${data.image}" alt="">
+								<div class="preview-content">
+									<h4 class="title"><a href="${data.url}">${data.title}</a></h4>
+									<div class="description">${data.description}</div>
+									<div class="domain"><a href="${data.url}">${data.main_domain}</a></div>
+								</div>
+							</div>`,
+							width: '800px'
+						})
+					}
+				})
+			})
+		})
+	</script>
+</body>
+</html>
