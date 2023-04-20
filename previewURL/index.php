@@ -25,7 +25,11 @@
 	header("Content-Type: text/html; charset=UTF-8");
 	$url = $_POST["url"];
 	$html = file_get_contents($url);
-
+	if (!$html){
+		header("Can not get url content");
+		echo "Bad Request";
+		exit;
+	}
 	libxml_use_internal_errors(true);
 	$doc = new DOMDocument();
 	$doc->recover = true; // attempt to recover from errors
